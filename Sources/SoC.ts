@@ -19,6 +19,7 @@ class IP {
     parentBus: Bus;
     sd: SD;
     bus: Bus;
+    busConfiguration: Object;
     bridgedIPs: IP[];
 
     isMaster(): boolean {
@@ -32,23 +33,7 @@ class IP {
 
         if (this.type == "BRDG") {
             instance += `// Bridged IPs for ${instanceID}\n\n`
-
-            for (var i in this.bus.signals) {
-                var signal = this.bus.signals[i];
-                if (signal.width === 1) {
-                    instance += `wire ${signal.name};`;
-                } else {
-                    instance += `wire [${signal.width - 1}:0] ${signal.name};`;
-                }
-                instance += '\n';
-            }
-            instance += '\n'
-
-            for (var i in this.bridgedIPs) {
-                var ip = this.bridgedIPs[i];
-                instance += ip.toVerilog(`${instanceID}_${i}`, instanceID);
-                instance += '\n\n';
-            }
+            instance += IP.ipsToVerilog(this.bridgedIPs, this.bus, this.busConfiguration, instanceID);
             instance += `// End of Bridged IPs for ${instanceID}\n\n`
         }
 
@@ -56,11 +41,9 @@ class IP {
 
         for (var i in this.parentBus.signals) {
             var signal = this.parentBus.signals[i];
-            if (signal.asserter == this.sd && signal.asserterName != null) {
-                instance += `.${signal.asserterName}(${signalPrefix}_${signal.asserterName}), `;
-            } else if (
+            if ((signal.asserter    == this.sd) ||
                 (signal.destination == this.sd) ||
-                (signal.destination == SD.all) ||
+                (signal.destination == SD.all)    ||
                 (signal.destination == undefined)
             ) {
                 instance += `.${signal.name}(${signalPrefix}_${signal.name}), `;
@@ -70,11 +53,9 @@ class IP {
         if (this.type == "BRDG") {
             for (var i in this.bus.signals) {
                 var signal = this.bus.signals[i];
-                if (signal.asserter == SD.master && signal.asserterName != null) {
-                    instance += `.${signal.asserterName}(${instanceID}_${signal.asserterName}), `;
-                } else if (
+                if ((signal.asserter    == SD.master) ||
                     (signal.destination == SD.master) ||
-                    (signal.destination == SD.all) ||
+                    (signal.destination == SD.all)    ||
                     (signal.destination == undefined)
                 ) {
                     instance += `.${signal.name}(${instanceID}_${signal.name}), `;
@@ -87,7 +68,7 @@ class IP {
         return instance;
     }
 
-    constructor(owner: string, id: string, type: string, affinity: Affinity, rtl: string, baseAddress: number, section: string, configuration: Object, parentBus: Bus, bus: Bus, bridgedIPs: IP[]) {
+    constructor(owner: string, id: string, type: string, affinity: Affinity, rtl: string, baseAddress: number, section: string, configuration: Object, parentBus: Bus, bus: Bus, busConfiguration: Object, bridgedIPs: IP[]) {
         this.owner = owner;
         this.id = id;
         this.type = type;
@@ -98,13 +79,14 @@ class IP {
         this.configuration = configuration;
         this.parentBus = parentBus;
         this.bus = bus;
+        this.busConfiguration = busConfiguration;
         this.bridgedIPs = bridgedIPs;
 
-        this.sd = (this.isMaster()) ? SD.master: SD.slave;
+        this.sd = (this.isMaster()) ? SD.master : SD.slave;
     }
 
     static fromObject(object: Object, parentBus: Bus): IP {
-        var newIP = new IP(null, null, null, null, null, null, null, null, null, null, null);
+        var newIP = new IP(null, null, null, null, null, null, null, null, null, null, null, null);
 
         newIP.owner = <string>object["owner"];
         newIP.id = <string>object["id"];
@@ -133,13 +115,57 @@ class IP {
         return newIP;
     }
 
+    static ipsToVerilog(ips: IP[], bus: Bus, busConfiguration: Object, prefix: string): string {
+        var verilog = "";
+        var width = (busConfiguration && busConfiguration["width"]) ? busConfiguration["width"] : bus.defaultBits;
+        if (bus.multiplexed) {
+            for (var i in bus.signals) {
+                var signal = bus.signals[i];
+                verilog += `wire ${
+                    (signal.width == 1) ? '':
+                    `[${Bus.widthGet(signal.width, width)}:0] `
+                }${prefix}_${signal.name};`;
+                verilog += '\n';
+            }
+    
+            verilog += '\n';
+    
+            for (var i in ips) {
+                var ip = ips[i];
+                verilog += ip.toVerilog(`${prefix}_${i}`, prefix);
+                verilog += '\n\n';
+            }
+        }
+        else {
+            for (var i in bus.signals) {
+                var signal = bus.signals[i];
+                for (var j in ips) {
+                    verilog += `reg ${
+                        (signal.width == 1) ? '':
+                        `[${Bus.widthGet(signal.width, width)}:0] `
+                    }${prefix}_${j}_${signal.name};`;
+                    verilog += '\n';
+                }
+            }
+
+            verilog += '\n';
+    
+            for (var i in ips) {
+                var ip = ips[i];
+                verilog += ip.toVerilog(`${prefix}_${i}`, `${prefix}_${i}`);
+                verilog += '\n\n';
+            }
+        }
+
+        return verilog
+    }
 
 }
 
 class SoC {
     name: string;
     bus: Bus;
-    busConfigurations: Object;
+    busConfiguration: Object;
     ips: IP[];
 
     toVerilog(): string {
@@ -154,32 +180,16 @@ class SoC {
 module ${this.name};
 
 `;
-        for (var i in this.bus.signals) {
-            var signal = this.bus.signals[i];
-            if (signal.width === 1) {
-                verilog += `wire ${signal.name};`;
-            } else {
-                verilog += `wire [${signal.width - 1}:0] ${signal.name};`;
-            }
-            verilog += '\n';
-        }
-
-        verilog += '\n';
-
-        for (var i in this.ips) {
-            var ip = this.ips[i];
-            verilog += ip.toVerilog(`${this.name}_${i}`, this.name);
-            verilog += '\n\n';
-        }
+        verilog += IP.ipsToVerilog(this.ips, this.bus, this.busConfiguration, this.name);
 
         verilog += 'endmodule';
         return verilog
     }
 
-    constructor(name: string, bus: Bus, busConfigurations: Object, ips: IP[]) {
+    constructor(name: string, bus: Bus, busConfiguration: Object, ips: IP[]) {
         this.name = name;
         this.bus = bus;
-        this.busConfigurations = busConfigurations;
+        this.busConfiguration = busConfiguration;
         this.ips = ips;
     }
 
@@ -188,7 +198,7 @@ module ${this.name};
 
         newSoC.name = <string>object["name"];
         newSoC.bus = Bus.getByName(<string>object["bus"]);
-        newSoC.busConfigurations = <Object>object["busConfigurations"];
+        newSoC.busConfiguration = <Object>object["busConfiguration"];
         newSoC.ips = [];
 
         var ipList = <Object[]>object["ips"];
@@ -200,6 +210,5 @@ module ${this.name};
 
         return newSoC;
     }
-
 
 }

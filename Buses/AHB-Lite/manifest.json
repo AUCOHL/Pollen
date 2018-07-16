@@ -65,8 +65,7 @@
             "width": -1
         },
         {
-            "name": "HREADY",
-            "asserterName": "HREADYOUT",
+            "name": "HREADYOUT",
             "asserter": "slave",
             "destination": "multiplexer",
             "width": 1
@@ -88,7 +87,7 @@
             "width": -1
         },
         {
-            "name": "HSEL_$ITER",
+            "name": "HSEL",
             "asserter": "decoder",
             "width": 1
         }

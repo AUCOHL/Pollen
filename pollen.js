@@ -13,7 +13,6 @@ var Signal = /** @class */ (function () {
     function Signal(name, asserter, asserterName, resetActiveHigh, resetSynchronous, destination, width) {
         this.name = name;
         this.asserter = asserter;
-        this.asserterName = asserterName;
         this.resetActiveHigh = resetActiveHigh;
         this.resetSynchronous = resetSynchronous;
         this.destination = destination;
@@ -23,12 +22,11 @@ var Signal = /** @class */ (function () {
         var newSignal = new Signal(null, null, null, null, null, null, null);
         newSignal.name = object["name"];
         newSignal.asserter = SD[object["asserter"]];
-        newSignal.asserterName = object["asserterName"];
         newSignal.resetActiveHigh = object["resetActiveHigh"];
         newSignal.resetSynchronous = object["resetSynchronous"];
         newSignal.destination = SD[object["destination"]];
         var width = object["width"];
-        newSignal.width = (width == -1) ? defaultBits : width;
+        newSignal.width = width;
         return newSignal;
     };
     return Signal;
@@ -64,6 +62,9 @@ var Bus = /** @class */ (function () {
         }
         return this.buses[name];
     };
+    Bus.widthGet = function (signal, def) {
+        return (signal !== -1) ? (signal - 1) : (def - 1);
+    };
     Bus.buses = {};
     return Bus;
 }());
@@ -77,7 +78,7 @@ var Affinity;
     Affinity[Affinity["other"] = 5] = "other";
 })(Affinity || (Affinity = {}));
 var IP = /** @class */ (function () {
-    function IP(owner, id, type, affinity, rtl, baseAddress, section, configuration, parentBus, bus, bridgedIPs) {
+    function IP(owner, id, type, affinity, rtl, baseAddress, section, configuration, parentBus, bus, busConfiguration, bridgedIPs) {
         this.owner = owner;
         this.id = id;
         this.type = type;
@@ -88,6 +89,7 @@ var IP = /** @class */ (function () {
         this.configuration = configuration;
         this.parentBus = parentBus;
         this.bus = bus;
+        this.busConfiguration = busConfiguration;
         this.bridgedIPs = bridgedIPs;
         this.sd = (this.isMaster()) ? SD.master : SD.slave;
     }
@@ -101,32 +103,14 @@ var IP = /** @class */ (function () {
         var instance = '';
         if (this.type == "BRDG") {
             instance += "// Bridged IPs for " + instanceID + "\n\n";
-            for (var i in this.bus.signals) {
-                var signal = this.bus.signals[i];
-                if (signal.width === 1) {
-                    instance += "wire " + signal.name + ";";
-                }
-                else {
-                    instance += "wire [" + (signal.width - 1) + ":0] " + signal.name + ";";
-                }
-                instance += '\n';
-            }
-            instance += '\n';
-            for (var i in this.bridgedIPs) {
-                var ip = this.bridgedIPs[i];
-                instance += ip.toVerilog(instanceID + "_" + i, instanceID);
-                instance += '\n\n';
-            }
+            instance += IP.ipsToVerilog(this.bridgedIPs, this.bus, this.busConfiguration, instanceID);
             instance += "// End of Bridged IPs for " + instanceID + "\n\n";
         }
         instance += this.id + " " + instanceID + "(";
         for (var i in this.parentBus.signals) {
             var signal = this.parentBus.signals[i];
-            console.log(signal.asserter, this.sd, signal.name, signal.asserterName);
-            if (signal.asserter == this.sd && signal.asserterName != null) {
-                instance += "." + signal.asserterName + "(" + signalPrefix + "_" + signal.asserterName + "), ";
-            }
-            else if ((signal.destination == this.sd) ||
+            if ((signal.asserter == this.sd) ||
+                (signal.destination == this.sd) ||
                 (signal.destination == SD.all) ||
                 (signal.destination == undefined)) {
                 instance += "." + signal.name + "(" + signalPrefix + "_" + signal.name + "), ";
@@ -135,10 +119,8 @@ var IP = /** @class */ (function () {
         if (this.type == "BRDG") {
             for (var i in this.bus.signals) {
                 var signal = this.bus.signals[i];
-                if (signal.asserter == SD.master && signal.asserterName != null) {
-                    instance += "." + signal.asserterName + "(" + instanceID + "_" + signal.asserterName + "), ";
-                }
-                else if ((signal.destination == SD.master) ||
+                if ((signal.asserter == SD.master) ||
+                    (signal.destination == SD.master) ||
                     (signal.destination == SD.all) ||
                     (signal.destination == undefined)) {
                     instance += "." + signal.name + "(" + instanceID + "_" + signal.name + "), ";
@@ -149,7 +131,7 @@ var IP = /** @class */ (function () {
         return instance;
     };
     IP.fromObject = function (object, parentBus) {
-        var newIP = new IP(null, null, null, null, null, null, null, null, null, null, null);
+        var newIP = new IP(null, null, null, null, null, null, null, null, null, null, null, null);
         newIP.owner = object["owner"];
         newIP.id = object["id"];
         newIP.type = object["type"];
@@ -172,33 +154,53 @@ var IP = /** @class */ (function () {
         }
         return newIP;
     };
+    IP.ipsToVerilog = function (ips, bus, busConfiguration, prefix) {
+        var verilog = "";
+        var width = (busConfiguration && busConfiguration["width"]) ? busConfiguration["width"] : bus.defaultBits;
+        if (bus.multiplexed) {
+            for (var i in bus.signals) {
+                var signal = bus.signals[i];
+                verilog += "wire " + ((signal.width == 1) ? '' :
+                    "[" + Bus.widthGet(signal.width, width) + ":0] ") + prefix + "_" + signal.name + ";";
+                verilog += '\n';
+            }
+            verilog += '\n';
+            for (var i in ips) {
+                var ip = ips[i];
+                verilog += ip.toVerilog(prefix + "_" + i, prefix);
+                verilog += '\n\n';
+            }
+        }
+        else {
+            for (var i in bus.signals) {
+                var signal = bus.signals[i];
+                for (var j in ips) {
+                    verilog += "reg " + ((signal.width == 1) ? '' :
+                        "[" + Bus.widthGet(signal.width, width) + ":0] ") + prefix + "_" + j + "_" + signal.name + ";";
+                    verilog += '\n';
+                }
+            }
+            verilog += '\n';
+            for (var i in ips) {
+                var ip = ips[i];
+                verilog += ip.toVerilog(prefix + "_" + i, prefix + "_" + i);
+                verilog += '\n\n';
+            }
+        }
+        return verilog;
+    };
     return IP;
 }());
 var SoC = /** @class */ (function () {
-    function SoC(name, bus, busConfigurations, ips) {
+    function SoC(name, bus, busConfiguration, ips) {
         this.name = name;
         this.bus = bus;
-        this.busConfigurations = busConfigurations;
+        this.busConfiguration = busConfiguration;
         this.ips = ips;
     }
     SoC.prototype.toVerilog = function () {
         var verilog = "\n/*\n * " + this.name + "\n * \n * Generated by the Pollen SoC Generator\n * " + new Date() + "\n * /\n\nmodule " + this.name + ";\n\n";
-        for (var i in this.bus.signals) {
-            var signal = this.bus.signals[i];
-            if (signal.width === 1) {
-                verilog += "wire " + signal.name + ";";
-            }
-            else {
-                verilog += "wire [" + (signal.width - 1) + ":0] " + signal.name + ";";
-            }
-            verilog += '\n';
-        }
-        verilog += '\n';
-        for (var i in this.ips) {
-            var ip = this.ips[i];
-            verilog += ip.toVerilog(this.name + "_" + i, this.name);
-            verilog += '\n\n';
-        }
+        verilog += IP.ipsToVerilog(this.ips, this.bus, this.busConfiguration, this.name);
         verilog += 'endmodule';
         return verilog;
     };
@@ -206,7 +208,7 @@ var SoC = /** @class */ (function () {
         var newSoC = new SoC(null, null, null, null);
         newSoC.name = object["name"];
         newSoC.bus = Bus.getByName(object["bus"]);
-        newSoC.busConfigurations = object["busConfigurations"];
+        newSoC.busConfiguration = object["busConfiguration"];
         newSoC.ips = [];
         var ipList = object["ips"];
         for (var i = 0; i <= ipList.length; i += 1) {

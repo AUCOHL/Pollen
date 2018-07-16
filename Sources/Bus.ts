@@ -11,7 +11,6 @@ enum SD {
 class Signal {
     name: string;
     asserter: SD;
-    asserterName: string;
     resetActiveHigh: boolean;
     resetSynchronous: boolean;
     destination: SD;
@@ -20,7 +19,6 @@ class Signal {
     constructor(name: string, asserter: SD, asserterName: string, resetActiveHigh: boolean, resetSynchronous: boolean, destination: SD, width: number) {
         this.name = name;
         this.asserter = asserter;
-        this.asserterName = asserterName;
         this.resetActiveHigh = resetActiveHigh;
         this.resetSynchronous = resetSynchronous;
         this.destination = destination;
@@ -32,13 +30,12 @@ class Signal {
 
         newSignal.name = <string>object["name"];
         newSignal.asserter = SD[<string>object["asserter"]];
-        newSignal.asserterName = <string>object["asserterName"];
         newSignal.resetActiveHigh = <boolean>object["resetActiveHigh"];
         newSignal.resetSynchronous = <boolean>object["resetSynchronous"];
         newSignal.destination = SD[<string>object["destination"]];
 
         let width = <number>object["width"];
-        newSignal.width = (width == -1) ? defaultBits: width
+        newSignal.width = width;
 
         return newSignal;
     }
@@ -88,5 +85,9 @@ class Bus {
             this.buses[name] = Bus.fromObject(busObject);
         }
         return this.buses[name];
+    }
+
+    static widthGet(signal: number, def: number): number {
+        return (signal !== -1)? (signal - 1) : (def - 1);
     }
 }

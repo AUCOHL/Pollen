@@ -20,7 +20,7 @@
             "width": 1
         },
         {
-            "name": "PSEL_$ITER",
+            "name": "PSEL",
             "asserter": "decoder",
             "width": 1
         },
