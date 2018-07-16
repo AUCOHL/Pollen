@@ -1,0 +1,153 @@
+{
+  "name": "SampleSoC",
+  "bus": "AHB-Lite",
+  "ips": [
+    {
+      "owner": "cloudv",
+      "id": "dwarfRV32",
+      "affinity": "infrastructure",
+      "type": "CPU",
+      "rtl": "",
+      "baseAddress": null,
+      "section": "",
+      "editorMetadata": {
+        "xPosition": 210,
+        "yPosition": 100,
+        "busConnection": {
+          "orientation": "V"
+        }
+      },
+      "configuration": {
+        "RF_Type": null,
+        "Num_Int": null,
+        "CLK_Src": null,
+        "MUL_Ext": null
+      },
+      "bus": null,
+      "bridgedIPs": null
+    },
+    {
+      "owner": "cloudv",
+      "id": "smctrl",
+      "affinity": "infrastructure",
+      "type": "SMCTRL",
+      "rtl": "",
+      "baseAddress": null,
+      "section": "",
+      "editorMetadata": {
+        "xPosition": 90,
+        "yPosition": 180,
+        "busConnection": {
+          "orientation": "V"
+        }
+      },
+      "configuration": {
+        "Flash_Type": null
+      },
+      "bus": null,
+      "bridgedIPs": null
+    },
+    {
+      "owner": "cloudv",
+      "id": "sram",
+      "affinity": "infrastructure",
+      "type": "SRAM",
+      "rtl": "",
+      "baseAddress": 0,
+      "section": "",
+      "editorMetadata": {
+        "xPosition": 210,
+        "yPosition": 280,
+        "busConnection": {
+          "orientation": "V"
+        }
+      },
+      "configuration": {
+        "Flash_Type": null
+      },
+      "bus": null,
+      "bridgedIPs": null
+    },
+    {
+      "owner": "cloudv",
+      "id": "brdg",
+      "affinity": "infrastructure",
+      "type": "BRDG",
+      "rtl": "",
+      "baseAddress": 1000,
+      "section": "",
+      "editorMetadata": {
+        "xPosition": 370,
+        "yPosition": 207.5,
+        "busConnection": {
+          "orientation": "V"
+        }
+      },
+      "configuration": {
+        
+      },
+      "bus": "APB",
+      "bridgedIPs": [
+        {
+          "owner": "cloudv",
+          "id": "spi",
+          "affinity": "commIPs",
+          "type": "SPI",
+          "rtl": "",
+          "baseAddress": 1000,
+          "section": "",
+          "editorMetadata": {
+            "busConnection": {
+              "orientation": "H"
+            }
+          },
+          "configuration": {
+            "IRQ_Number": null
+          },
+          "bus": null,
+          "bridgedIPs": null
+        },
+        {
+          "owner": "cloudv",
+          "id": "uart",
+          "affinity": "commIPs",
+          "type": "UART",
+          "rtl": "",
+          "baseAddress": 1100,
+          "section": "",
+          "editorMetadata": {
+            "busConnection": {
+              "orientation": "H"
+            }
+          },
+          "configuration": {
+            "IRQ_Number": null
+          },
+          "bus": null,
+          "bridgedIPs": null
+        }
+      ]
+    },
+    {
+      "owner": "cloudv",
+      "id": "GPIO",
+      "affinity": "digIPs",
+      "type": "GPIO",
+      "rtl": "",
+      "baseAddress": 1200,
+      "section": "",
+      "editorMetadata": {
+        "busConnection": {
+          "orientation": "H"
+        }
+      },
+      "configuration": {
+        "IRQ_Number": null,
+        "size": null,
+        "direction": null
+      },
+      "bus": null,
+      "bridgedIPs": null
+    }
+  ]
+}

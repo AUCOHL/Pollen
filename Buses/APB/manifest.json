@@ -1,0 +1,58 @@
+{
+    "name": "APB",
+    "creator": "ARM Limited",
+    "creatorID": null,
+    "multiplexed": true,
+    "defaultBits": 32,
+    "signals": [
+        {
+            "name": "PCLK",
+            "asserter": "globalClock",
+            "destination": "all",
+            "width": 1
+        },
+        {
+            "name": "PRESETn",
+            "asserter": "globalReset",
+            "resetActiveHigh": false,
+            "resetSynchronous": false,
+            "destination": "all",
+            "width": 1
+        },
+        {
+            "name": "PSEL_$ITER",
+            "asserter": "decoder",
+            "width": 1
+        },
+        {
+            "name": "PENABLE",
+            "asserter": "master",
+            "width": 1
+        },
+        {
+            "name": "PWRITE",
+            "asserter": "master",
+            "width": 1
+        },
+        {
+            "name": "PWDATA",
+            "asserter": "master",
+            "width": -1
+        },
+        {
+            "name": "PREADY",
+            "asserter": "slave",
+            "width": 1
+        },
+        {
+            "name": "PRDATA",
+            "asserter": "slave",
+            "width": -1
+        },
+        {
+            "name": "PSLVERR",
+            "asserter": "slave",
+            "width": 1
+        }
+    ]
+}

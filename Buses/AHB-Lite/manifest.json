@@ -1,0 +1,96 @@
+{
+    "name": "AHB-Lite",
+    "creator": "ARM Limited",
+    "creatorID": null,
+    "multiplexed": true,
+    "defaultBits": 32,
+    "signals": [
+        {
+            "name": "HCLK",
+            "asserter": "globalClock",
+            "destination": "all",
+            "width": 1
+        },
+        {
+            "name": "HRESETn",
+            "asserter": "globalReset",
+            "resetActiveHigh": false,
+            "resetSynchronous": false,
+            "destination": "all",
+            "width": 1
+        },
+        {
+            "name": "HADDR",
+            "asserter": "master",
+            "width": -1
+        },
+        {
+            "name": "HWRITE",
+            "asserter": "master",
+            "width": 1
+        },
+        {
+            "name": "HSIZE",
+            "asserter": "master",
+            "width": 3
+        },
+        {
+            "name": "HBURST",
+            "asserter": "master",
+            "width": 3
+        },
+        {
+            "name": "HPROT",
+            "asserter": "master",
+            "width": 4
+        },
+        {
+            "name": "HTRANS",
+            "asserter": "master",
+            "width": 2
+        },
+        {
+            "name": "HMASTLOCK",
+            "asserter": "master",
+            "width": 1
+        },
+        {
+            "name": "HWDATA",
+            "asserter": "master",
+            "width": -1
+        },
+        {
+            "name": "HADDR",
+            "asserter": "master",
+            "width": -1
+        },
+        {
+            "name": "HREADY",
+            "asserterName": "HREADYOUT",
+            "asserter": "slave",
+            "destination": "multiplexer",
+            "width": 1
+        },
+        {
+            "name": "HREADY",
+            "asserter": "multiplexer",
+            "destination": "all",
+            "width": 1
+        },
+        {
+            "name": "HRESP",
+            "asserter": "slave",
+            "width": 1
+        },
+        {
+            "name": "HRDATA",
+            "asserter": "slave",
+            "width": -1
+        },
+        {
+            "name": "HSEL_$ITER",
+            "asserter": "decoder",
+            "width": 1
+        }
+    ]
+}
