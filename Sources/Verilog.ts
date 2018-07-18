@@ -34,6 +34,13 @@ class Verilog {
                     verilog += '\n';
                 }
             }
+            ///// INT Lines
+            var master = ips.filter(ip => ip.isMaster())[0];
+            if (master !== undefined && master.configuration["Num_Int"] !== undefined) {
+                verilog += `wire [${master.configuration["Num_Int"] - 1}:0] INT;\n`;
+            }
+
+
             verilog += '\n';
 
             // Generate decoder/multiplexer
@@ -131,6 +138,13 @@ IP.prototype.toVerilog = function(prefix: string = ''): string {
                 instance += `.${signal.name}(${prefix}_${signal.name}), `;
             }
         }
+    }
+
+    if (this.isMaster() && this.configuration["Num_Int"] !== undefined) {
+        instance += ".INT(INT), ";
+    }
+    if (this.configuration["IRQ_Number"] != undefined) {
+        instance += `.INT(INT[${this.configuration["IRQ_Number"]}]), `
     }
 
     if (this.type == "BRDG") {

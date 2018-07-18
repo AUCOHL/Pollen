@@ -26,8 +26,6 @@ function main(argv: string[]): number {
     }
 
     var inputFilename = opt.argv[0];
-    var rtlFilename = inputFilename + ".v";
-    var cHeaderFilename = inputFilename + ".c";
     
     var socString = Filesystem.readFileSync(inputFilename).toString();
     var socObject = JSON.parse(socString);
