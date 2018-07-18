@@ -21,54 +21,17 @@ class IP {
     bus: Bus;
     busConfiguration: Object;
     bridgedIPs: IP[];
+    instanceNumber: number;
 
     isMaster(): boolean {
         return (this.baseAddress == null);
     }
 
-    toVerilog(prefix: string = '', signalPrefix: string = ''): string {
-        var instanceID = `${prefix}_${this.id}`;
-
-        var instance = '';
-
-        if (this.type == "BRDG") {
-            instance += `// Bridged IPs for ${instanceID}\n\n`
-            instance += IP.ipsToVerilog(this.bridgedIPs, this.bus, this.busConfiguration, instanceID);
-            instance += `// End of Bridged IPs for ${instanceID}\n\n`
-        }
-
-        instance += `${this.id} ${instanceID}(`;
-
-        for (var i in this.parentBus.signals) {
-            var signal = this.parentBus.signals[i];
-            if ((signal.asserter    == this.sd) ||
-                (signal.destination == this.sd) ||
-                (signal.destination == SD.all)    ||
-                (signal.destination == undefined)
-            ) {
-                instance += `.${signal.name}(${signalPrefix}_${signal.name}), `;
-            }
-        }
-
-        if (this.type == "BRDG") {
-            for (var i in this.bus.signals) {
-                var signal = this.bus.signals[i];
-                if ((signal.asserter    == SD.master) ||
-                    (signal.destination == SD.master) ||
-                    (signal.destination == SD.all)    ||
-                    (signal.destination == undefined)
-                ) {
-                    instance += `.${signal.name}(${instanceID}_${signal.name}), `;
-                }
-            }
-        }
-
-        instance = instance.slice(0, -2) + ");"
-
-        return instance;
+    instanceID(prefix: string): string {
+        return (this.instanceNumber !== null) ? `${prefix}_${this.id}_${this.instanceNumber}`: `${prefix}_${this.id}`;
     }
 
-    constructor(owner: string, id: string, type: string, affinity: Affinity, rtl: string, baseAddress: number, section: string, configuration: Object, parentBus: Bus, bus: Bus, busConfiguration: Object, bridgedIPs: IP[]) {
+    constructor(owner: string, id: string, type: string, affinity: Affinity, rtl: string, baseAddress: number, section: string, configuration: Object, parentBus: Bus, bus: Bus, busConfiguration: Object, bridgedIPs: IP[], instanceNumber: number = null) {
         this.owner = owner;
         this.id = id;
         this.type = type;
@@ -81,11 +44,12 @@ class IP {
         this.bus = bus;
         this.busConfiguration = busConfiguration;
         this.bridgedIPs = bridgedIPs;
+        this.instanceNumber = null
 
         this.sd = (this.isMaster()) ? SD.master : SD.slave;
     }
 
-    static fromObject(object: Object, parentBus: Bus): IP {
+    static fromObject(object: Object, parentBus: Bus, instanceNumber: number): IP {
         var newIP = new IP(null, null, null, null, null, null, null, null, null, null, null, null);
 
         newIP.owner = <string>object["owner"];
@@ -98,6 +62,7 @@ class IP {
         newIP.configuration = <Object>object["configuration"];
         newIP.parentBus = parentBus
         newIP.sd = (newIP.isMaster()) ? SD.master: SD.slave;
+        newIP.instanceNumber = instanceNumber;
         
 
         if (newIP.type == "BRDG") {
@@ -107,57 +72,12 @@ class IP {
             var ipList = <Object[]>object["bridgedIPs"];
             for (var i = 0; i <= ipList.length; i += 1) {
                 if (ipList[i] !== undefined) {
-                    newIP.bridgedIPs.push(IP.fromObject(ipList[i], newIP.bus));
+                    newIP.bridgedIPs.push(IP.fromObject(ipList[i], newIP.bus, i));
                 }
             }
         }
 
         return newIP;
-    }
-
-    static ipsToVerilog(ips: IP[], bus: Bus, busConfiguration: Object, prefix: string): string {
-        var verilog = "";
-        var width = (busConfiguration && busConfiguration["width"]) ? busConfiguration["width"] : bus.defaultBits;
-        if (bus.multiplexed) {
-            for (var i in bus.signals) {
-                var signal = bus.signals[i];
-                verilog += `wire ${
-                    (signal.width == 1) ? '':
-                    `[${Bus.widthGet(signal.width, width)}:0] `
-                }${prefix}_${signal.name};`;
-                verilog += '\n';
-            }
-    
-            verilog += '\n';
-    
-            for (var i in ips) {
-                var ip = ips[i];
-                verilog += ip.toVerilog(`${prefix}_${i}`, prefix);
-                verilog += '\n\n';
-            }
-        }
-        else {
-            for (var i in bus.signals) {
-                var signal = bus.signals[i];
-                for (var j in ips) {
-                    verilog += `reg ${
-                        (signal.width == 1) ? '':
-                        `[${Bus.widthGet(signal.width, width)}:0] `
-                    }${prefix}_${j}_${signal.name};`;
-                    verilog += '\n';
-                }
-            }
-
-            verilog += '\n';
-    
-            for (var i in ips) {
-                var ip = ips[i];
-                verilog += ip.toVerilog(`${prefix}_${i}`, `${prefix}_${i}`);
-                verilog += '\n\n';
-            }
-        }
-
-        return verilog
     }
 
 }
@@ -167,24 +87,6 @@ class SoC {
     bus: Bus;
     busConfiguration: Object;
     ips: IP[];
-
-    toVerilog(): string {
-        let verilog = `
-/*
- * ${this.name}
- * 
- * Generated by the Pollen SoC Generator
- * ${new Date()}
- * /
-
-module ${this.name};
-
-`;
-        verilog += IP.ipsToVerilog(this.ips, this.bus, this.busConfiguration, this.name);
-
-        verilog += 'endmodule';
-        return verilog
-    }
 
     constructor(name: string, bus: Bus, busConfiguration: Object, ips: IP[]) {
         this.name = name;
@@ -204,7 +106,7 @@ module ${this.name};
         var ipList = <Object[]>object["ips"];
         for (var i = 0; i <= ipList.length; i += 1) {
             if (ipList[i] !== undefined) {
-                newSoC.ips.push(IP.fromObject(ipList[i], newSoC.bus));
+                newSoC.ips.push(IP.fromObject(ipList[i], newSoC.bus, i));
             }
         }
 

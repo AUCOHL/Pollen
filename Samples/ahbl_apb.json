@@ -18,10 +18,7 @@
         }
       },
       "configuration": {
-        "RF_Type": null,
-        "Num_Int": null,
-        "CLK_Src": null,
-        "MUL_Ext": null
+        "Num_Int": 13
       },
       "bus": null,
       "bridgedIPs": null
@@ -32,7 +29,7 @@
       "affinity": "infrastructure",
       "type": "SMCTRL",
       "rtl": "",
-      "baseAddress": null,
+      "baseAddress": 9000,
       "section": "",
       "editorMetadata": {
         "xPosition": 90,

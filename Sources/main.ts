@@ -1,6 +1,8 @@
 /// <reference path="Bus.ts"/>
 /// <reference path="SoC.ts"/>
 
+/// <reference path="Verilog.ts"/>
+
 var Getopt = require('node-getopt');
 var Filesystem = require('fs');
 

@@ -74,3 +74,5 @@ typings/
 
 # Misc
 **/.DS_Store
+*.v
+pollen.js

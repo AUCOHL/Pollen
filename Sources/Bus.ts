@@ -1,37 +1,55 @@
 enum SD {
-    master = 0,
+    global = 0,
+    master,
     slave,
-    globalClock,
-    globalReset,
     decoder,
-    multiplexer,
-    all
+    multiplexer
 }
+
+class Assertion {
+    static rules = [];
+}
+Assertion.rules[SD.global] = [SD.master, SD.slave];
+Assertion.rules[SD.master] = [SD.slave];
+Assertion.rules[SD.slave] = [SD.master];
+Assertion.rules[SD.decoder] = [SD.slave];
+Assertion.rules[SD.multiplexer] = [SD.master];
+
+class Destination {
+    static rules = [];
+}
+Destination.rules[SD.global] = [SD.slave, SD.master];
+Destination.rules[SD.master] = [SD.master];
+Destination.rules[SD.slave] = [SD.slave];
+Destination.rules[SD.decoder] = [SD.slave];
+Destination.rules[SD.multiplexer] = [];
+
 
 class Signal {
     name: string;
     asserter: SD;
-    resetActiveHigh: boolean;
-    resetSynchronous: boolean;
+    forwarding: string;
     destination: SD;
     width: number;
 
-    constructor(name: string, asserter: SD, asserterName: string, resetActiveHigh: boolean, resetSynchronous: boolean, destination: SD, width: number) {
+    constructor(name: string, asserter: SD, forwarding: string, destination: SD, width: number) {
         this.name = name;
         this.asserter = asserter;
-        this.resetActiveHigh = resetActiveHigh;
-        this.resetSynchronous = resetSynchronous;
+        this.forwarding = forwarding;
         this.destination = destination;
         this.width = width;
     }
 
+    isMultiplexable(): boolean {
+        return (this.asserter == SD.slave || this.asserter == SD.decoder);
+    }
+
     static fromObject(object: Object, defaultBits: number): Signal {
-        var newSignal = new Signal(null, null, null, null, null, null, null);
+        var newSignal = new Signal(null, null, null, null, null);
 
         newSignal.name = <string>object["name"];
         newSignal.asserter = SD[<string>object["asserter"]];
-        newSignal.resetActiveHigh = <boolean>object["resetActiveHigh"];
-        newSignal.resetSynchronous = <boolean>object["resetSynchronous"];
+        newSignal.forwarding = <string>object["forwarding"];
         newSignal.destination = SD[<string>object["destination"]];
 
         let width = <number>object["width"];
@@ -88,6 +106,6 @@ class Bus {
     }
 
     static widthGet(signal: number, def: number): number {
-        return (signal !== -1)? (signal - 1) : (def - 1);
+        return (signal !== -1)? signal: def;
     }
 }

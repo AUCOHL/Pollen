@@ -7,21 +7,18 @@
     "signals": [
         {
             "name": "HCLK",
-            "asserter": "globalClock",
-            "destination": "all",
+            "asserter": "global",
             "width": 1
         },
         {
             "name": "HRESETn",
-            "asserter": "globalReset",
-            "resetActiveHigh": false,
-            "resetSynchronous": false,
-            "destination": "all",
+            "asserter": "global",
             "width": 1
         },
         {
             "name": "HADDR",
             "asserter": "master",
+            "destination": "decoder",
             "width": -1
         },
         {
@@ -73,7 +70,8 @@
         {
             "name": "HREADY",
             "asserter": "multiplexer",
-            "destination": "all",
+            "forwarding": "HREADYOUT",
+            "destination": "global",
             "width": 1
         },
         {

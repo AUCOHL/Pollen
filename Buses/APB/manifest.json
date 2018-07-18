@@ -7,16 +7,12 @@
     "signals": [
         {
             "name": "PCLK",
-            "asserter": "globalClock",
-            "destination": "all",
+            "asserter": "global",
             "width": 1
         },
         {
             "name": "PRESETn",
-            "asserter": "globalReset",
-            "resetActiveHigh": false,
-            "resetSynchronous": false,
-            "destination": "all",
+            "asserter": "global",
             "width": 1
         },
         {
