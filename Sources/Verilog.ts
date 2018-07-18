@@ -13,7 +13,25 @@ class Verilog {
             verilog += '// Wires/Registers\n';
             for (var i in bus.signals) {
                 var signal = bus.signals[i];
-                if (signal.asserter === SD.decoder || signal.asserter == SD.slave) { // If it's the selection line or a slave-driven line, we're gonna need 'em muxed.
+                if (signal.asserter === SD.slave) { // If it's the selection line or a slave-driven line, we're gonna need 'em muxed.
+                    for (var j in ips) {
+                        var ip = ips[j];
+                        if (ip.isMaster()) {
+                            continue;
+                        }
+
+                        verilog += `wire ${
+                            (signal.width == 1) ? '':
+                            `[${Bus.widthGet(signal.width, width) - 1}:0] `
+                        }${ip.instanceID(prefix)}_${signal.name};`;
+                        verilog += '\n';
+                    }
+                    verilog += `reg ${
+                        (signal.width == 1) ? '':
+                        `[${Bus.widthGet(signal.width, width) - 1}:0] `
+                    }${prefix}_${signal.name};`;
+                    verilog += '\n';
+                } else if (signal.asserter !== SD.global) {
                     for (var j in ips) {
                         var ip = ips[j];
                         if (ip.isMaster()) {
@@ -26,6 +44,11 @@ class Verilog {
                         }${ip.instanceID(prefix)}_${signal.name};`;
                         verilog += '\n';
                     }
+                    verilog += `wire ${
+                        (signal.width == 1) ? '':
+                        `[${Bus.widthGet(signal.width, width) - 1}:0] `
+                    }${prefix}_${signal.name};`;
+                    verilog += '\n';
                 } else {
                     verilog += `reg ${
                         (signal.width == 1) ? '':
@@ -88,7 +111,7 @@ class Verilog {
                         if (declaration.slice(-1) == '\n') {
                             declaration += '        ';
                         }
-                        declaration += `(${instanceID}_${signal.name} & {${Bus.widthGet(signal.width, width)}{${instanceID}_${selectionLine.name}}}) ||\n`;
+                        declaration += `(${instanceID}_${signal.name} & {${Bus.widthGet(signal.width, width)}{${instanceID}_${selectionLine.name}}}) |\n`;
                     }
                     verilog += declaration.slice(0, -3) + ";\n";
                 }
@@ -182,6 +205,13 @@ module ${this.name};
 
 `;
     verilog += Verilog.fromIPs(this.ips, this.bus, this.busConfiguration, this.name);
+
+    verilog += `
+initial begin
+// your testbench code here
+end
+
+`;
 
     verilog += 'endmodule';
     return verilog

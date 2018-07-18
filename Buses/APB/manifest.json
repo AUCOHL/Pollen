@@ -31,6 +31,12 @@
             "width": 1
         },
         {
+            "name": "PADDR",
+            "asserter": "master",
+            "destination": "decoder",
+            "width": 1
+        },
+        {
             "name": "PWDATA",
             "asserter": "master",
             "width": -1

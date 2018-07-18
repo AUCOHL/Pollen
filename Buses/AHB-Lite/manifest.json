@@ -57,11 +57,6 @@
             "width": -1
         },
         {
-            "name": "HADDR",
-            "asserter": "master",
-            "width": -1
-        },
-        {
             "name": "HREADYOUT",
             "asserter": "slave",
             "destination": "multiplexer",
