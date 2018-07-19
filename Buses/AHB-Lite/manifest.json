@@ -72,7 +72,7 @@
         {
             "name": "HRESP",
             "asserter": "slave",
-            "width": 1
+            "width": 2
         },
         {
             "name": "HRDATA",

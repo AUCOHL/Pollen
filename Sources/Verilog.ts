@@ -1,9 +1,39 @@
 /// <reference path="SoC.ts"/>
 /// <reference path="Bus.ts"/>
+/// <reference path="Global.ts"/>
+
+var mathjs = require('mathjs');
 
 class Verilog {
-    static fromIPs(ips: IP[], bus: Bus, busConfiguration: Object, prefix: string): string {
+    static net(type: string, signalWidth: number, width: number, name: string): string {
+        return `${type} ${
+            (signalWidth == 1) ? '':
+            `[${Bus.widthGet(signalWidth, width) - 1}:0] `
+        }${name};`;
+    }
+
+    static fromIPs(ports: Object[], ips: IP[], bus: Bus, busConfiguration: Object, prefix: string): string {
         var verilog = "";
+        for (var i in bus.signals) {
+            var signal = bus.signals[i];
+            var portName = `${prefix}_${signal.name}`
+            if (signal.asserter === SD.global) {
+                ports[portName] = {
+                    name: portName,
+                    // prefix: outputPrefix
+                    width: 1,
+                    type: 'input'
+                };
+            } else if (signal.destination === SD.global) {
+                ports[portName] = {
+                    name: portName,
+                    // prefix: outputPrefix
+                    width: 1,
+                    type: 'output'
+                };
+            }
+        }
+
         var width = (busConfiguration && busConfiguration["width"]) ? busConfiguration["width"] : bus.defaultBits;
         if (!bus.multiplexed) {
             //MARK: TO-DO
@@ -20,16 +50,10 @@ class Verilog {
                             continue;
                         }
 
-                        verilog += `wire ${
-                            (signal.width == 1) ? '':
-                            `[${Bus.widthGet(signal.width, width) - 1}:0] `
-                        }${ip.instanceID(prefix)}_${signal.name};`;
+                        verilog += Verilog.net('wire', signal.width, width, `${ip.instanceID(prefix)}_${signal.name}`);
                         verilog += '\n';
                     }
-                    verilog += `reg ${
-                        (signal.width == 1) ? '':
-                        `[${Bus.widthGet(signal.width, width) - 1}:0] `
-                    }${prefix}_${signal.name};`;
+                    verilog += Verilog.net('reg', signal.width, width, `${prefix}_${signal.name}`);
                     verilog += '\n';
                 } else if (signal.asserter !== SD.global) {
                     for (var j in ips) {
@@ -38,22 +62,10 @@ class Verilog {
                             continue;
                         }
 
-                        verilog += `reg ${
-                            (signal.width == 1) ? '':
-                            `[${Bus.widthGet(signal.width, width) - 1}:0] `
-                        }${ip.instanceID(prefix)}_${signal.name};`;
+                        verilog += Verilog.net('reg', signal.width, width, `${ip.instanceID(prefix)}_${signal.name}`);
                         verilog += '\n';
                     }
-                    verilog += `wire ${
-                        (signal.width == 1) ? '':
-                        `[${Bus.widthGet(signal.width, width) - 1}:0] `
-                    }${prefix}_${signal.name};`;
-                    verilog += '\n';
-                } else {
-                    verilog += `reg ${
-                        (signal.width == 1) ? '':
-                        `[${Bus.widthGet(signal.width, width) - 1}:0] `
-                    }${prefix}_${signal.name};`;
+                    verilog += Verilog.net('wire', signal.width, width, `${prefix}_${signal.name}`);
                     verilog += '\n';
                 }
             }
@@ -122,27 +134,343 @@ class Verilog {
             // Generate IP instances
             for (var i in ips) {
                 var ip = ips[i];
-                verilog += ip.toVerilog(prefix);
+                verilog += ip.toVerilog(ports, prefix);
                 verilog += '\n\n';
             }
         }
 
         return verilog
     }
+
+    // Code adapted from Cloud V testbench generator.
+    static extractPorts(sourceModule: string, rtl: string, cb: any) {
+        let e, end, hasParams, inputNames, inputPrefix, outputNames, outputPrefix, start;
+        rtl = rtl.replace(/\/\/.*$/gm, '').replace(/\/\*(.|[\r\n])*?\*\//gm, '');
+    
+        //Extracing modules.
+        const _getModuleRegex = () => new RegExp("\\s*module\\s+(\\w+)\\s*(#\\s*\\(([\\s\\S]+?)\\)\\s*)??\\s*((\\([\\s\\S]*?\\))?)\\s*;\\s*([\\s\\S]*?)\\s*\\bendmodule\\b", "gm");
+        const _getIORegex = modifier => new RegExp(`\\s*${modifier.trim()}\\s+((\\[\\s*(\\w+)\\s*\\:\\s*(\\w+)\\s*\\]\\s*)?)([\\s\\S]+?)\\s*[;]`, "gm");
+    
+        const _getInputRegex = () => new RegExp("(input)(\\s*\\[\\s*([\\s\\S]+?)\\s*\\:\\s*([\\s\\S]+?)\\s*\\]\\s*|\\s+)([\\s\\S]+?)\\s*[;]", 'gm');
+        const _getOutputRegex = () => new RegExp("((output\\s+reg)|(output))(\\s*\\[\\s*([\\s\\S]+?)\\s*\\:\\s*([\\s\\S]+?)\\s*\\]\\s*|\\s+)([\\s\\S]+?)\\s*[;]", 'gm');
+        const _getParamRegex = function(modifiers) { if (modifiers == null) { modifiers = 'gm'; } return new RegExp("(parameter)(\\s*\\[\\s*(\\d+)\\s*\\:\\s*(\\d+)\\s*\\]\\s*|\\s+)([\\s\\S]+?)\\s*[;,\\)]", modifiers); };
+        const _getParamContentRegex = () => new RegExp("([\\s\\S]*?)\\s*=\\s*([\\s\\S]+)", 'gm');
+        const _getLiteralsRegex = () => new RegExp("\\s*(\\d+)\\s*\\'([bodh])\\s*([\\dabcdefABCDEF_]+)\\s*", "mi");
+    
+        const moduleRegex = _getModuleRegex();
+        const modules = {};
+        let matches = moduleRegex.exec(rtl);
+    
+        const _clearParams = function(body) {
+            const paramRegx = _getParamRegex(null);
+            const replacementRegex = _getParamRegex('m');
+            let paramMatches = paramRegx.exec(body);
+            while (paramMatches != null) {
+                body = body.replace(replacementRegex, '');
+                const paramAssign = paramMatches[5].split(/\s*,\s*/gm);
+                for (let assign of paramAssign) {
+                    const handSides = _getParamContentRegex().exec(assign);
+                    const lhs = handSides[1];
+                    let rhs = handSides[2];
+                    const literalsRegex = _getLiteralsRegex();
+                    const literalsReplacementRegex = _getLiteralsRegex();
+                    let literalMatches = literalsRegex.exec(rhs);
+                    while (literalMatches != null) {
+                        const numberOfBits = parseInt(literalMatches[1]);
+                        const base = literalMatches[2].toLowerCase();
+                        let value = literalMatches[3].toLowerCase();
+                        value = value.replace(/_/gm, '');
+                        const maxValue = Math.pow(2, numberOfBits + 1) - 1;
+                        let decimalValue = undefined;
+                        switch (base) {
+                            case 'b':
+                                decimalValue = parseInt(value, 2);
+                                break;
+                            case 'o':
+                                decimalValue = parseInt(value, 8);
+                                break;
+                            case 'd':
+                                decimalValue = parseInt(value, 10);
+                                break;
+                            case 'h':
+                                decimalValue = parseInt(value, 16);
+                                break;
+                        }
+                        if (decimalValue > maxValue) {
+                            throw {error: `The value ${value} exceeds the available ${numberOfBits} bits (max: ${maxValue}).`};
+                        }
+                        rhs = rhs.replace(literalsReplacementRegex, decimalValue);
+                        literalMatches = _getLiteralsRegex().exec(rhs);
+                    }
+    
+                    const rhsEval = mathjs.eval(rhs);
+                    body = body.replace(new RegExp(`\\b${lhs}\\b`, 'gm'), rhsEval);
+                }
+                paramMatches = _getParamRegex(null).exec(body);
+            }
+            return body;
+        };
+    
+        while (matches != null) {
+            const moduleContent = matches[0];
+            const moduleName = matches[1];
+            const moduleHeaderParams = matches[3];
+            const moduleParams = matches[4];
+            let moduleBody = matches[6];
+    
+    
+            try {
+                if (moduleHeaderParams != null) {
+                    moduleBody = _clearParams(`${moduleHeaderParams};\n${moduleBody}`);
+                } else {
+                    moduleBody = _clearParams(moduleBody);
+                }
+            } catch (error) {
+                e = error;
+                if (e.error != null) {
+                    return cb(e);
+                } else {
+                    console.error(e);
+                    return cb({error: 'Invalid usage of parameters.'});
+                }
+            }
+            hasParams = (moduleParams.trim() !== '') && !/\( *\)/gm.test(moduleParams);
+            let parsedParams = [];
+            if (hasParams) {
+                parsedParams = (/\( *([\s\S]+?) *\)/g).exec(moduleParams)[1].trim().split(/\s*,\s*/gm);
+            }
+    
+            modules[moduleName] = {
+                name: moduleName,
+                rtl: moduleContent,
+                params: parsedParams,
+                body: moduleBody,
+                hasParams
+            };
+            matches = moduleRegex.exec(rtl);
+        }
+    
+        if ((modules[sourceModule] == null)) {
+            return cb({error: `Module ${sourceModule} does not exist in the source file.`});
+        }
+    
+        const targetModule = modules[sourceModule];
+        const sourceModuleContent = targetModule.rtl;
+        const sourceModuleBody = targetModule.body;
+    
+        //Extracting inputs/outputs.
+        const inputs = [];
+        const outputs = [];
+    
+        if (targetModule.hasParams) {
+            for (let param of targetModule.params) {
+                let paramMatches = /^(input)(\s*\[\s*([\s\S]+?)\s*\:\s*([\s\S]+?)\s*\]\s*|\s+)([\s\S]+?)\s*$/gm.exec(param);
+                if (paramMatches != null) {
+                    inputPrefix = '';
+                    start = (end = undefined);
+                    if ((paramMatches[3] != null) && (paramMatches[4] != null)) {
+                        try {
+                            start = mathjs.eval(paramMatches[3].trim());
+                            end = mathjs.eval(paramMatches[4].trim());
+                            inputPrefix = `[${start}: ${end}] `;
+                        } catch (error1) {
+                            e = error1;
+                            console.error(e);
+                            return cb({error: `Evaluation failed for [${paramMatches[3].trim()}: ${paramMatches[4].trim()}]`});
+                        }
+                    }
+                    inputNames = paramMatches[5].split(/\s*,\s*/m);
+                    inputNames.forEach(function(inputName) {
+                        if (inputName.trim === '') { return; }
+                        if ((start != null) && (end != null)) {
+                            if (end < start) {
+                                const temp = start;
+                                start = end;
+                                end = temp;
+                            }
+                            inputs.push({
+                                name: inputName,
+                                // prefix: inputPrefix
+                                width: end - start + 1,
+                                type: 'input',
+                                instance: `${inputName}`
+                            });
+                        } else {
+                            return inputs.push({
+                                name: inputName,
+                                // prefix: inputPrefix
+                                width: 1,
+                                type: 'input',
+                                instance: `${inputName}`
+                            });
+                        }
+                    });
+                } else {
+                    paramMatches = /^((output\s+reg)|(output))(\s*\[\s*([\s\S]+?)\s*\:\s*([\s\S]+?)\s*\]\s*|\s+)([\s\S]+?)\s*$/gm.exec(param);
+                    if (paramMatches != null) {
+                        outputPrefix = '';
+                        start = (end = undefined);
+                        if ((paramMatches[5] != null) && (paramMatches[6] != null)) {
+                            try {
+                                start = mathjs.eval(paramMatches[5].trim());
+                                end = mathjs.eval(paramMatches[6].trim());
+                                outputPrefix = `[${start}: ${end}] `;
+                            } catch (error2) {
+                                e = error2;
+                                console.error(e);
+                                return cb({error: `Evaluation failed for [${paramMatches[5].trim()}: ${paramMatches[6].trim()}]`});
+                            }
+                        }
+                        outputNames = paramMatches[7].split(/\s*,\s*/m);
+                        outputNames.forEach(function(outputName) {
+                            if (outputName.trim() === '') { return; }
+                            if ((start != null) && (end != null)) {
+                                if (end < start) {
+                                    const temp = start;
+                                    start = end;
+                                    end = temp;
+                                }
+                                outputs.push({
+                                    name: outputName,
+                                    // prefix: outputPrefix
+                                    width: end - start + 1,
+                                    type: 'output',
+                                    instance: `${outputName}`
+                                });
+                            } else {
+                                return outputs.push({
+                                    name: outputName,
+                                    // prefix: outputPrefix
+                                    width: 1,
+                                    type: 'output',
+                                    instance: `${outputName}`
+                                });
+                            }
+                        });
+                    }
+                }
+            }
+        }
+    
+    
+        const inputsRegex = _getInputRegex();
+        const outputsRegex = _getOutputRegex();
+    
+        matches = inputsRegex.exec(sourceModuleBody);
+        while (matches != null) {
+            inputPrefix = '';
+            start = (end = undefined);
+            if ((matches[3] != null) && (matches[4] != null)) {
+                try {
+                    start = mathjs.eval(matches[3].trim());
+                    end = mathjs.eval(matches[4].trim());
+                    inputPrefix = `[${start}: ${end}] `;
+                } catch (error3) {
+                    e = error3;
+                    console.error(e);
+                    return cb({error: `Evaluation failed for [${matches[3].trim()}: ${matches[4].trim()}]`});
+                }
+            }
+            inputNames = matches[5].split(/\s*,\s*/m);
+            inputNames.forEach(function(inputName) {
+                if (inputName.trim === '') { return; }
+                if ((start != null) && (end != null)) {
+                    if (end < start) {
+                        const temp = start;
+                        start = end;
+                        end = temp;
+                    }
+                    inputs.push({
+                        name: inputName,
+                        // prefix: inputPrefix
+                        width: end - start + 1,
+                        type: 'input',
+                        instance: `${inputName}`
+                    });
+                } else {
+                    return inputs.push({
+                        name: inputName,
+                        // prefix: inputPrefix
+                        index: 1,
+                        type: 'input',
+                        instance: `${inputName}`
+                    });
+                }
+            });
+            matches = inputsRegex.exec(sourceModuleBody);
+        }
+    
+        matches = outputsRegex.exec(sourceModuleBody);
+        while (matches != null) {
+            outputPrefix = '';
+            start = (end = undefined);
+            if ((matches[5] != null) && (matches[6] != null)) {
+                try {
+                    start = mathjs.eval(matches[5].trim());
+                    end = mathjs.eval(matches[6].trim());
+                    outputPrefix = `[${start}: ${end}] `;
+                } catch (error4) {
+                    e = error4;
+                    console.error(e);
+                    return cb({error: `Evaluation failed for [${matches[5].trim()}: ${matches[6].trim()}]`});
+                }
+            }
+            outputNames = matches[7].split(/\s*,\s*/m);
+            outputNames.forEach(function(outputName) {
+                if (outputName.trim() === '') { return; }
+                if ((start != null) && (end != null)) {
+                    if (end < start) {
+                        const temp = start;
+                        start = end;
+                        end = temp;
+                    }
+                    inputs.push({
+                        name: outputName,
+                        // prefix: outputPrefix
+                        width: end - start + 1,
+                        type: 'output',
+                        instance: `${outputName}`
+                    });
+                } else {
+                    return outputs.push({
+                        name: outputName,
+                        // prefix: outputPrefix
+                        width: 1,
+                        type: 'output',
+                        instance: `${outputName}`
+                    });
+                }
+            });
+            matches = outputsRegex.exec(sourceModuleBody);
+        }
+    
+        return (inputs.concat(outputs));
+    };
 }
 
 interface IP {
-    toVerilog(prefix: string): string;
+    toVerilog(ports: Object[], prefix: string): string;
 }
 
-IP.prototype.toVerilog = function(prefix: string = ''): string {
+IP.prototype.toVerilog = function(ports: Object[], prefix: string = ''): string {
     var instanceID = this.instanceID(prefix);
 
     var instance = '';
+    var rtl = Filesystem.readFileSync(`${globalInfo.rtlLocation}/${this.owner}/${this.id}/${this.rtl}`).toString();
+
+    var uniquePorts = Verilog.extractPorts(this.id, rtl, console.log);
+    for (var i in uniquePorts) {
+        var port = uniquePorts[i];
+        var matches = /(?:wire|reg)(?:\s*\[[0-9]+:[0-9]+\])?\s*([_A-Za-z][_A-Za-z0-9]+)/g.exec(port.name);
+        if (matches !== null) {
+            port.name = matches[1];
+        }
+    }
+    uniquePorts = uniquePorts.filter(port=> !this.parentBus.signalNames.includes(port.name) && port.name != "INT");
 
     if (this.type == "BRDG") {
         instance += `// Bridged IPs for ${instanceID}\n\n`
-        instance += Verilog.fromIPs(this.bridgedIPs, this.bus, this.busConfiguration, instanceID);
+        instance += Verilog.fromIPs(ports, this.bridgedIPs, this.bus, this.busConfiguration, instanceID);
         instance += `// End of Bridged IPs for ${instanceID}\n\n`
     }
 
@@ -183,6 +511,15 @@ IP.prototype.toVerilog = function(prefix: string = ''): string {
         }
     }
 
+
+
+    for (var i in uniquePorts) {
+        var port = uniquePorts[i];
+        instance += `.${port.name}(${instanceID}_${port.name}), `;
+        port.name = `${instanceID}_${port.name}`;
+        ports[port.name] = port;
+    }
+
     instance = instance.slice(0, -2) + ");"
 
     return instance;
@@ -193,26 +530,35 @@ interface SoC {
 }
 
 SoC.prototype.toVerilog = function(): string  {
+    var ports = [];
+
     let verilog = `
 /*
 * ${this.name}
 * 
-* Generated by the Pollen SoC Generator
+* Generated by Pollen for Cloud V
 * ${new Date()}
 */
 
-module ${this.name};
+module ${this.name}([[__PORT_LISTING__]]);
 
+[[__PORT_POLARITIES__]]
 `;
-    verilog += Verilog.fromIPs(this.ips, this.bus, this.busConfiguration, this.name);
-
-    verilog += `
-initial begin
-// your testbench code here
-end
-
-`;
-
+    verilog += Verilog.fromIPs(ports, this.ips, this.bus, this.busConfiguration, this.name);
     verilog += 'endmodule';
+
+    ports.map(h=> console.log(h));
+
+    var portListing = '';
+    var portPolarities = '//Port Polarities\n';
+    for (var key in ports) {
+        portListing += ports[key].name;
+        portListing += ', ';
+
+        portPolarities += Verilog.net(ports[key].type, ports[key].width, ports[key].width, ports[key].name) + "\n";
+    }
+
+    verilog = verilog.replace('[[__PORT_LISTING__]]', portListing.slice(0, -2)).replace('[[__PORT_POLARITIES__]]', portPolarities);
+
     return verilog
 }

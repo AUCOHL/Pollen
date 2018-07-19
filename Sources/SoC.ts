@@ -22,6 +22,7 @@ class IP {
     busConfiguration: Object;
     bridgedIPs: IP[];
     instanceNumber: number;
+    ports: Object;
 
     isMaster(): boolean {
         return (this.baseAddress == null);
@@ -44,7 +45,7 @@ class IP {
         this.bus = bus;
         this.busConfiguration = busConfiguration;
         this.bridgedIPs = bridgedIPs;
-        this.instanceNumber = null
+        this.instanceNumber = instanceNumber;
 
         this.sd = (this.isMaster()) ? SD.master : SD.slave;
     }

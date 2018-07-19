@@ -67,6 +67,7 @@ class Bus {
     multiplexed: boolean;
     defaultBits: number;
     signals: Signal[];
+    signalNames: string[];
 
     constructor(name: string, creator: string, creatorID: string, multiplexed: boolean, defaultBits: number, signals: Signal[]) {
         this.name = name;
@@ -74,6 +75,9 @@ class Bus {
         this.multiplexed = multiplexed;
         this.defaultBits = defaultBits;
         this.signals = signals;
+        this.signalNames = (this.signals == null) ?
+            null :
+            this.signals.map(signal => signal.name);
     }
 
     static fromObject(object: Object): Bus {
@@ -91,6 +95,7 @@ class Bus {
             var signal = Signal.fromObject(signalList[i], newBus.defaultBits);
             newBus.signals.push(signal);
         }
+        newBus.signalNames = newBus.signals.map(signal => signal.name);
 
         return newBus;
     }

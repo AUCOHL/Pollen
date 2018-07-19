@@ -27,6 +27,7 @@
   "dependencies": {
     "@types/node": "^10.5.2",
     "@types/node-getopt": "^0.2.31",
+    "mathjs": "^5.0.3",
     "node-getopt": "^0.3.2"
   }
 }
