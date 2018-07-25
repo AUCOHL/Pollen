@@ -1,16 +1,17 @@
 module AHBL_dwarfRV32 (
-    input HCLK, HRESETn,
+    input HCLK,
+	input HRESETn,
 
     input [31:0]    HRDATA,
     input           HREADY,
-    input [1:0]     HRESP,                //for errors 
+    input		     HRESP,                //for errors 
 
     output [31:0]   HADDR,
     output [2:0]    HSIZE,
     output [2:0]    HBURST,
     output [3:0]    HPROT,
     output          HMASTLOCK,
-    output          HTRANS,                 //current transfer type
+    output [1:0]    HTRANS,                 //current transfer type
     output [31:0]   HWDATA,
     output          HWRITE,
 

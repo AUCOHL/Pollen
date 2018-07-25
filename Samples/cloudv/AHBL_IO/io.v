@@ -1,13 +1,11 @@
-
-
 module AHBL_IO (
     input               HSEL,
     input               HCLK,
     input               HRESETn,
-    input               HTRANS,
+    input  [1:0]        HTRANS,
     input  [31:0]       HADDR,
     input  [31:0]       HWDATA,
-    input  [2:0]        HSIZE,                  // [2:0]
+    input  [2:0]        HSIZE,
     input  [2:0]        HBURST,
     input  [3:0]        HPROT,
     input               HMASTLOCK,

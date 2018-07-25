@@ -19,7 +19,7 @@
             "name": "HADDR",
             "asserter": "master",
             "destination": "decoder",
-            "width": -1
+            "width": 32
         },
         {
             "name": "HWRITE",
@@ -72,7 +72,7 @@
         {
             "name": "HRESP",
             "asserter": "slave",
-            "width": 2
+            "width": 1
         },
         {
             "name": "HRDATA",

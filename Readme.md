@@ -1,27 +1,34 @@
 # Pollen
-
-# Dependencies.
-NPM, Typescript
+# Development Dependencies
+Node.js, NPM.
 
 ```bash
     # macOS
     brew install node
-    npm install
 
     # Linux
     sudo apt-get install nodejs npm
     sudo ln -s /usr/bin/nodejs /usr/bin/node
 ```
 
-# Usage
-
+# Building
 ```bash
     # Compile
+    npm install
     make
+```
 
+# Usage
+## Top Level Module Generation
+```bash
     # Execute
     node pollen.js Samples/drv32_ahbl.json > soc.v
 
     # Test Parse
-    iverilog Samples/Cloud-V/AHB2MEM/*.v Samples/Cloud-V/AHBSLAVE_IO/io.v Samples/Cloud-V/AHBLdwarfRV32/regfile.v Samples/Cloud-V/AHBLdwarfRV32/rv32.v Samples/Cloud-V/AHBLdwarfRV32/drv32_ahbl.v soc.v
+    iverilog Samples/cloudv/AHBL_MEM/memory.v Samples/cloudv/AHBL_IO/io.v Samples/cloudv/AHBL_dwarfRV32/regfile.v Samples/cloudv/AHBL_dwarfRV32/rv32.v Samples/cloudv/AHBL_dwarfRV32/drv32_ahbl.v soc.v
+```
+## Validation of Bus Compliance
+```bash
+    # Execute
+    node pollen.js -v AHB-Lite -m AHBL_dwarfRV32 -s master Samples/cloudv/AHBL_dwarfRV32/drv32_ahbl.v
 ```

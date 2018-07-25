@@ -9,7 +9,7 @@
             "type":"CPU",
             "rtl":"drv32_ahbl.v",
             "baseAddress":null,
-            "section":"",
+            "section":null,
             "editorMetadata":{
                 "xPosition":210,
                 "yPosition":100,
@@ -31,7 +31,7 @@
             "type":"SRAM",
             "rtl":"memory.v",
             "baseAddress":0,
-            "section":"",
+            "section":"all",
             "editorMetadata":{
                 "xPosition":90,
                 "yPosition":180,
@@ -52,7 +52,7 @@
             "type":"GPIO",
             "rtl":"io.v",
             "baseAddress":1024,
-            "section":"",
+            "section":null,
             "editorMetadata":{
                 "xPosition":210,
                 "yPosition":280,

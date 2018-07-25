@@ -1,27 +1,16 @@
-// file: memory.v
-// author: @shalan
-
-  
-//`define _MEMDISP_ 	0
-
-//MM IO
-//`define    MMAP_PRINT	32'h80000000
-//`define    LOGCAPH	14
-
 `define B0_BOUND 7:0 
 `define B1_BOUND 15:8 
 `define B2_BOUND 23:16
 `define B3_BOUND 31:24
 
-`define HEXPATH "/home/xrexeon/iCEcube2/projects/soc_XSP"
 module AHBL_MEM
 (
     input               HSEL,
     input               HCLK,
     input               HRESETn,
-    input               HTRANS,
-    input  [31:0]       HWDATA,
+    input  [1:0]        HTRANS,
     input  [31:0]       HADDR,
+    input  [31:0]       HWDATA,
     input  [2:0]        HSIZE,                  // [2:0]
     input  [2:0]        HBURST,
     input  [3:0]        HPROT,
@@ -31,9 +20,11 @@ module AHBL_MEM
 
     output              HRESP,
     output              HREADYOUT,
-    output  reg [31:0]      HRDATA
+    output  reg [31:0]  HRDATA
+
 );
 parameter CV_CONFIGURATION_MEMWIDTH = 10; 					// SIZE = 1KB = 256 Words
+parameter CV_BASEADDRESS = "0";
 localparam MEMWIDTH = CV_CONFIGURATION_MEMWIDTH;
 
 
@@ -51,7 +42,7 @@ localparam MEMWIDTH = CV_CONFIGURATION_MEMWIDTH;
 
   initial
   begin
-      $readmemh({`HEXPATH,"/test.hex"}, memory);
+      $readmemh({"./bin_", CV_BASEADDRESS, ".hex"}, memory);
   end
 
 // Sample the Address Phase

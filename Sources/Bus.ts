@@ -44,6 +44,12 @@ class Signal {
         return (this.asserter == SD.slave || this.asserter == SD.decoder);
     }
 
+    onSD(sd: Destination): boolean {
+        return (this.asserter === sd) ||
+        (this.destination === undefined) && (Assertion.rules[this.asserter].includes(sd)) ||
+        (this.destination !== undefined) && (Destination.rules[this.destination].includes(sd));
+    }
+
     static fromObject(object: Object, defaultBits: number): Signal {
         var newSignal = new Signal(null, null, null, null, null);
 
