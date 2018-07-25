@@ -14,8 +14,7 @@
 `define B3_BOUND 31:24
 
 `define HEXPATH "/home/xrexeon/iCEcube2/projects/soc_XSP"
-module AHB2MEM
-#(parameter MEMWIDTH = 10)					// SIZE = 1KB = 256 Words
+module AHBL_MEM
 (
     input               HSEL,
     input               HCLK,
@@ -34,7 +33,8 @@ module AHB2MEM
     output              HREADYOUT,
     output  reg [31:0]      HRDATA
 );
-
+parameter CV_CONFIGURATION_MEMWIDTH = 10; 					// SIZE = 1KB = 256 Words
+localparam MEMWIDTH = CV_CONFIGURATION_MEMWIDTH;
 
 
 // Registers to store Adress Phase Signals

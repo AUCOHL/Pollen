@@ -1,6 +1,6 @@
 
 
-module AHBSLAVE_IO (
+module AHBL_IO (
     input               HSEL,
     input               HCLK,
     input               HRESETn,

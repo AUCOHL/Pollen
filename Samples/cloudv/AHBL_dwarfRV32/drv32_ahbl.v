@@ -1,4 +1,4 @@
-module AHBLdwarfRV32 (
+module AHBL_dwarfRV32 (
     input HCLK, HRESETn,
 
     input [31:0]    HRDATA,
@@ -14,12 +14,10 @@ module AHBLdwarfRV32 (
     output [31:0]   HWDATA,
     output          HWRITE,
 
-
-    //external interrupts interface here
-    input [15:0] INT,
-
+	input  [15:0] INT,
     output simdone
 );
+parameter CV_CONFIGURATION_ENABLE_MUL_EXTENSION = 0;
 
     localparam IDLE     = 1'b0;             // no transfer needed
     localparam NONSEQ   = 1'b1;             // single / burst initial 
@@ -38,13 +36,15 @@ module AHBLdwarfRV32 (
 	wire[31:0] rfRS1, rfRS2;
 	//wire simdone;
 
-`ifdef _EN_EXT_
-	wire[31:0] extA, extB;
-	wire[31:0] extR;
-	wire extStart;
-	wire extDone;
-	wire[2:0] extFunc3;
-`endif
+	generate
+		if (CV_CONFIGURATION_ENABLE_MUL_EXTENSION) begin : ext_wires
+			wire[31:0] extA, extB;
+			wire[31:0] extR;
+			wire extStart;
+			wire extDone;
+			wire[2:0] extFunc3;
+		end
+	endgenerate
 
 	wire IRQ;
 	wire [3:0] IRQnum;
@@ -76,22 +76,23 @@ module AHBLdwarfRV32 (
 		.INT(INT), .IRQen(IRQen),
 		.IRQ(IRQ), .IRQnum(IRQnum)
 	);
-`ifdef _EN_EXT_
-	mul MULEXT (
-		.clk(HCLK),
-		.rst(~HRESETn),
-		.done(extDone),
-		.start(extStart),
-		.a(extA), .b(extB),
-		.p(extR)
-	);
-`else 
-	assign extA = 32'd0;
-	assign extB = 32'd0;
-	assign extStart = 1'b0;
-`endif
-
-
+	generate
+	if (CV_CONFIGURATION_ENABLE_MUL_EXTENSION) begin : extinstance
+		mul MULEXT (
+			.clk(HCLK),
+			.rst(~HRESETn),
+			.done(extDone),
+			.start(extStart),
+			.a(extA), .b(extB),
+			.p(extR)
+		);
+	end
+	else begin : extsubstitute
+		assign extA = 32'd0;
+		assign extB = 32'd0;
+		assign extStart = 1'b0;
+	end
+	endgenerate
 
 	// simulate the RF
     regFile RF (.clk(HCLK), .rst(~HRESETn),
@@ -106,3 +107,4 @@ module AHBLdwarfRV32 (
     //extensions here
 
 endmodule
+

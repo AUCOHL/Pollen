@@ -3,8 +3,8 @@
     "bus":"AHB-Lite",
     "ips":[
         {
-            "owner":"Cloud-V",
-            "id":"AHBLdwarfRV32",
+            "owner":"cloudv",
+            "id":"AHBL_dwarfRV32",
             "affinity":"infrastructure",
             "type":"CPU",
             "rtl":"drv32_ahbl.v",
@@ -18,14 +18,15 @@
                 }
             },
             "configuration":{
-                "Num_Int":16
+                "NUM_INT": 16,
+                "ENABLE_MUL_EXTENSION": 0
             },
             "bus":null,
             "bridgedIPs":null
         },
         {
-            "owner":"Cloud-V",
-            "id":"AHB2MEM",
+            "owner":"cloudv",
+            "id":"AHBL_MEM",
             "affinity":"infrastructure",
             "type":"SRAM",
             "rtl":"memory.v",
@@ -45,8 +46,8 @@
             "bridgedIPs":null
         },
         {
-            "owner":"Cloud-V",
-            "id":"AHBSLAVE_IO",
+            "owner":"cloudv",
+            "id":"AHBL_IO",
             "affinity":"infrastructure",
             "type":"GPIO",
             "rtl":"io.v",
@@ -60,7 +61,7 @@
                 }
             },
             "configuration":{
-                "Flash_Type":null
+                "MEM_WIDTH": 10
             },
             "bus":null,
             "bridgedIPs":null

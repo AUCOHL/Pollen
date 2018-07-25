@@ -1,0 +1,18 @@
+{
+    "type": "CPU",
+    "busFunctionalModel": false,
+    "configurations": [
+        {
+            "id": "ENABLE_MUL_EXTENSION",
+            "friendlyName": "RV32m extension",
+            "options": [
+                0, 1
+            ],
+            "optionFriendlyNames": [
+                "Do not use",
+                "Use"
+            ]
+        }
+    ]
+}
+

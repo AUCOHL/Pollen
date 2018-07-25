@@ -71,8 +71,8 @@ class Verilog {
             }
             ///// INT Lines
             var master = ips.filter(ip => ip.isMaster())[0];
-            if (master !== undefined && master.configuration["Num_Int"] !== undefined) {
-                verilog += `wire [${master.configuration["Num_Int"] - 1}:0] INT;\n`;
+            if (master !== undefined && master.configuration["NUM_INT"] !== undefined) {
+                verilog += `wire [${master.configuration["NUM_INT"] - 1}:0] INT;\n`;
             }
 
 
@@ -491,7 +491,7 @@ IP.prototype.toVerilog = function(ports: Object[], prefix: string = ''): string 
         }
     }
 
-    if (this.isMaster() && this.configuration["Num_Int"] !== undefined) {
+    if (this.isMaster() && this.configuration["NUM_INT"] !== undefined) {
         instance += ".INT(INT), ";
     }
     if (this.configuration["IRQ_Number"] != undefined) {

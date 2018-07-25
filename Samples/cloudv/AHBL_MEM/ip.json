@@ -1,0 +1,11 @@
+{
+    "type": "SRAM",
+    "busFunctionalModel": false,
+    "configurations": [
+        {
+            "id": "MEMWIDTH",
+            "friendlyName": "Memory width (Exponent of 2)"
+        }
+    ]
+}
+
