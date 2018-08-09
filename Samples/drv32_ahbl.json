@@ -40,7 +40,7 @@
                 }
             },
             "configuration":{
-                "Flash_Type":null
+                "FLASH_TYPE": 0
             },
             "bus":null,
             "bridgedIPs":null

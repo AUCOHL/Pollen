@@ -31,8 +31,20 @@ class Verilog {
             instance += `// End of Bridged IPs for ${instanceID}\n\n`
         }
 
-        instance += `${ip.id} ${instanceID}(`;
+        instance += `${ip.id} ${instanceID}`;
 
+        // Parameters
+        instance += " #("
+        for (var i in ip.configuration) {
+            if (i === "NUM_INT" || i === "IRQ_NUMBER") {
+                continue;
+            }
+            instance += `.${i}(${ip.configuration[i]}), `;
+        }
+        instance = instance.slice(0, -2) + ")";
+
+        // Ports
+        instance += " (";
         for (var i in ip.parentBus.signals) {
             var signal = ip.parentBus.signals[i];
             if (signal.onSD(ip.sd)) {
@@ -167,7 +179,7 @@ class Verilog {
                 var multiplexableSignals = bus.signals.filter(signal => signal.isMultiplexable() && signal != selectionLine);
                 var slaves = ips.filter(ip => !ip.isMaster());
 
-                verilog += '// """Multiplexer"""\n';
+                verilog += '// Multiplexer\n';
                 verilog += `always @ * begin\n`;
                 for (var i in multiplexableSignals) {
                     var signal = multiplexableSignals[i];

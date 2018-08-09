@@ -61,7 +61,7 @@ function main(argv: string[]): number {
         ['h', 'help'                , 'Display this menu.'],
         ['v', 'validate=ARG'        , 'Bus to validate verilog module against.'],
         ['m', 'module=ARG'          , 'Module to validate against bus. (Required with validate option.)'],
-        ['s', 'masterOrSlave=ARG'   , 'Master or slave? (Only valid with validate option.)', 'slave']
+        ['s', 'masterOrSlave=ARG'   , 'Master or slave? (Required with validate option.)']
     ]);
     getopt.setHelp(
         "Usage: node pollen.js [OPTIONS] <files>\n" +
@@ -81,21 +81,15 @@ function main(argv: string[]): number {
     var language: Language = new Verilog();
 
     if (opt.options['validate']) {
-        if (opt.options['module']) {
+        if (opt.options['module'] && opt.options['masterOrSlave']) {
             return validate(language, inputFilename, opt.options['validate'], opt.options['module'], SD[<string>opt.options['masterOrSlave']]);
         } else {
             getopt.showHelp();
             return 64;
         }
     } else {
-        if (opt.options['masterOrSlave']) {
-            getopt.showHelp();
-            return 64;
-        }
         return generateTopLevelModule(language, inputFilename);
     }
-
-    return 0;
 }
 
 process.exit(main(process.argv))
