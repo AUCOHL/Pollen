@@ -372,7 +372,7 @@ module ${soc.name}([[__PORT_LISTING__]]);
     
         if (targetModule.hasParams) {
             for (let param of targetModule.params) {
-                let paramMatches = /^(input)(\s*\[\s*([\s\S]+?)\s*\:\s*([\s\S]+?)\s*\]\s*|\s+)([\s\S]+?)\s*$/gm.exec(param);
+                let paramMatches = /^(input)(?:\s+wire\s+)?(\s*\[\s*([\s\S]+?)\s*\:\s*([\s\S]+?)\s*\]\s*|\s+)([\s\S]+?)\s*$/gm.exec(param);
                 if (paramMatches != null) {
                     inputPrefix = '';
                     start = (end = undefined);
@@ -418,7 +418,7 @@ module ${soc.name}([[__PORT_LISTING__]]);
                         }
                     });
                 } else {
-                    paramMatches = /^((output\s+reg)|(output))(\s*\[\s*([\s\S]+?)\s*\:\s*([\s\S]+?)\s*\]\s*|\s+)([\s\S]+?)\s*$/gm.exec(param);
+                    paramMatches = /^((output))(?:\s+(wire|reg)\s+)?(\s*\[\s*([\s\S]+?)\s*\:\s*([\s\S]+?)\s*\]\s*|\s+)([\s\S]+?)\s*$/gm.exec(param);
                     if (paramMatches != null) {
                         outputPrefix = '';
                         start = (end = undefined);

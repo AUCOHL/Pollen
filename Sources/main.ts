@@ -8,6 +8,7 @@ function validate(language: Language, file: string, busName: string, hwModule: s
     var rtl = Filesystem.readFileSync(file).toString();
     var bus = Bus.getByName(busName);
     var ports = language.extractPorts(hwModule, rtl, console.log);
+    console.log(ports);
 
     var variableWidth = null;
     var error = false;
@@ -15,9 +16,18 @@ function validate(language: Language, file: string, busName: string, hwModule: s
     for (var i in bus.signals) {
         var signal = bus.signals[i];
         
-        var match = ports.filter(port => port.name == signal.name)[0];
+        var match = function(){
+            for (var i in ports) {
+                var port = ports[i];
+                if (port.name === signal.name) {
+                    return port;
+                }
+            }
+            return null;
+        }();
+
         if (signal.onSD(sd)) {
-            if (match === undefined) {
+            if (match === null) {
                 console.log(`ERROR: Port ${signal.name} does not exist on ${hwModule}.`);
                 error = true;
             } else {
@@ -33,7 +43,6 @@ function validate(language: Language, file: string, busName: string, hwModule: s
                         error = true;
                     }
             }
-            ports.splice(ports.indexOf(match), 1);
         }
     }
     if (!error) {
