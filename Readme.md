@@ -1,4 +1,4 @@
-# Pollen for Cloud V
+# 🌼 Pollen for Cloud V
 An SoC JSON to Verilog generator.
 
 # Development Dependencies
@@ -22,7 +22,7 @@ Node.js, NPM.
 
 # Usage
 ## Top Level Module Generation
-Taking an SoC JSON as specified in the Cloud V SoC Workflow, it generates a Verilog file for a top level SoC, with module instantiation, port analysis and much more being taken care of.
+Taking an SoC JSON, it generates a Verilog file for a top level SoC, with module instantiation, port analysis and much more being taken care of.
 
 ```bash
     # Execute
@@ -38,3 +38,6 @@ This tool validates an IP's compliance with a certain bus. Buses are represented
     # Execute
     node pollen.js -v AHB-Lite -m AHBL_dwarfRV32 -s master Samples/cloudv/AHBL_dwarfRV32/drv32_ahbl.v
 ```
+
+# ⚖️ License
+The GNU General Public License v3, or at your option, any later version. Check 'License'.
