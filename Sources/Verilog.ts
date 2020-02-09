@@ -1,5 +1,5 @@
 /*
-    Global.ts
+    Verilog.ts
     Part of Pollen
 
     Copyright (C) 2018 Cloud V
@@ -17,14 +17,12 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-/// <reference path="SoC.ts"/>
-/// <reference path="Bus.ts"/>
-/// <reference path="Global.ts"/>
+import { Filesystem, globalInfo } from "./Global.js";
+import { SD, Bus } from "./Bus.js";
+import { IP, SoC } from "./SoC.js";
+import { default as math } from "mathjs";
 
-var mathjs = require('mathjs');
-
-class Verilog {
-
+export class Verilog {
     net(type: string, signalWidth: number, width: number, name: string): string {
         return `${type} ${
             (signalWidth == 1) ? '':
@@ -226,7 +224,7 @@ class Verilog {
             // Generate IP instances
             for (var i in ips) {
                 var ip = ips[i];
-                verilog += ip.toVerilog(ports, prefix);
+                verilog += this.fromIP(ip, ports, prefix);
                 verilog += '\n\n';
             }
         }
@@ -330,7 +328,7 @@ module ${soc.name}([[__PORT_LISTING__]]);
                         literalMatches = _getLiteralsRegex().exec(rhs);
                     }
     
-                    const rhsEval = mathjs.eval(rhs);
+                    const rhsEval = math.compile(rhs).evaluate();
                     body = body.replace(new RegExp(`\\b${lhs}\\b`, 'gm'), rhsEval);
                 }
                 paramMatches = _getParamRegex(null).exec(body);
@@ -397,8 +395,8 @@ module ${soc.name}([[__PORT_LISTING__]]);
                     start = (end = undefined);
                     if ((paramMatches[3] != null) && (paramMatches[4] != null)) {
                         try {
-                            start = mathjs.eval(paramMatches[3].trim());
-                            end = mathjs.eval(paramMatches[4].trim());
+                            start = math.compile(paramMatches[3].trim()).evaluate();
+                            end = math.compile(paramMatches[4].trim()).evaluate();
                             inputPrefix = `[${start}: ${end}] `;
                         } catch (error1) {
                             e = error1;
@@ -443,8 +441,8 @@ module ${soc.name}([[__PORT_LISTING__]]);
                         start = (end = undefined);
                         if ((paramMatches[5] != null) && (paramMatches[6] != null)) {
                             try {
-                                start = mathjs.eval(paramMatches[5].trim());
-                                end = mathjs.eval(paramMatches[6].trim());
+                                start = math.compile(paramMatches[5].trim()).evaluate();
+                                end = math.compile(paramMatches[6].trim()).evaluate();
                                 outputPrefix = `[${start}: ${end}] `;
                             } catch (error2) {
                                 e = error2;
@@ -498,8 +496,8 @@ module ${soc.name}([[__PORT_LISTING__]]);
             start = (end = undefined);
             if ((matches[3] != null) && (matches[4] != null)) {
                 try {
-                    start = mathjs.eval(matches[3].trim());
-                    end = mathjs.eval(matches[4].trim());
+                    start = math.compile(matches[3].trim()).evaluate();
+                    end = math.compile(matches[4].trim()).evaluate();
                     inputPrefix = `[${start}: ${end}] `;
                 } catch (error3) {
                     e = error3;
@@ -546,8 +544,8 @@ module ${soc.name}([[__PORT_LISTING__]]);
             start = (end = undefined);
             if ((matches[5] != null) && (matches[6] != null)) {
                 try {
-                    start = mathjs.eval(matches[5].trim());
-                    end = mathjs.eval(matches[6].trim());
+                    start = math.compile(matches[5].trim()).evaluate();
+                    end = math.compile(matches[6].trim()).evaluate();
                     outputPrefix = `[${start}: ${end}] `;
                 } catch (error4) {
                     e = error4;
@@ -592,20 +590,20 @@ module ${soc.name}([[__PORT_LISTING__]]);
     };
 }
 
-interface IP {
-    toVerilog(ports: Object[], prefix: string): string;
-}
+// interface IP {
+//     toVerilog(ports: Object[], prefix: string): string;
+// }
 
-IP.prototype.toVerilog = function(ports: Object[], prefix: string = ''): string {
-    var language = new Verilog();
-    return language.fromIP(this, ports, prefix);
-}
+// IP.prototype.toVerilog = function(ports: Object[], prefix: string = ''): string {
+//     var language = new Verilog();
+//     return language.fromIP(this, ports, prefix);
+// }
 
-interface SoC {
-    toVerilog(): string;
-}
+// interface SoC {
+//     toVerilog(): string;
+// }
 
-SoC.prototype.toVerilog = function(): string  {
-    var language = new Verilog();
-    return language.fromSoC(this);
-}
+// SoC.prototype.toVerilog = function(): string  {
+//     var language = new Verilog();
+//     return language.fromSoC(this);
+// }

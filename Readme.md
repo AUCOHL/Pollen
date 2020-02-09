@@ -2,31 +2,31 @@
 An SoC JSON to Verilog generator.
 
 # Development Dependencies
-Node.js, NPM.
+Node.js LTS, NPM.
 
 ```bash
     # macOS
     brew install node
 
     # Linux
-    sudo apt-get install nodejs npm
-    sudo ln -s /usr/bin/nodejs /usr/bin/node
-```
+    curl -L https://git.io/n-install | bash
 
-# Building
-```bash
-    # Compile
-    npm install
-    make
+    # Both, after n is installed
+    n lts
 ```
 
 # Usage
+## First time
+```bash
+    npm i
+```
+
 ## Top Level Module Generation
 Taking an SoC JSON, it generates a Verilog file for a top level SoC, with module instantiation, port analysis and much more being taken care of.
 
 ```bash
     # Execute
-    node pollen.js Samples/drv32_ahbl.json > soc.v
+    npm run pollen -- -o soc.v Samples/drv32_ahbl.json
 
     # Test Parse
     iverilog Samples/cloudv/AHBL_MEM/memory.v Samples/cloudv/AHBL_IO/io.v Samples/cloudv/AHBL_dwarfRV32/regfile.v Samples/cloudv/AHBL_dwarfRV32/rv32.v Samples/cloudv/AHBL_dwarfRV32/drv32_ahbl.v soc.v
@@ -36,7 +36,7 @@ This tool validates an IP's compliance with a certain bus. Buses are represented
 
 ```bash
     # Execute
-    node pollen.js -v AHB-Lite -m AHBL_dwarfRV32 -s master Samples/cloudv/AHBL_dwarfRV32/drv32_ahbl.v
+    npm run pollen -- -v AHB-Lite -m AHBL_dwarfRV32 -s master Samples/cloudv/AHBL_dwarfRV32/drv32_ahbl.v
 ```
 
 # ⚖️ License

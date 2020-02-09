@@ -18,6 +18,8 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import { Filesystem } from "./Global.js";
+
 enum SD {
     global = 0,
     master,
@@ -129,7 +131,7 @@ class Bus {
     static buses: Object = {};
     static getByName(name: string): Bus {
         if (this.buses[name] === undefined) {
-            var busString = Filesystem.readFileSync(`./Buses/${name}/manifest.json`);
+            var busString = Filesystem.readFileSync(`./Buses/${name}/manifest.json`).toString();
             var busObject = JSON.parse(busString);
             this.buses[name] = Bus.fromObject(busObject);
         }
@@ -140,3 +142,5 @@ class Bus {
         return (signal !== -1)? signal: def;
     }
 }
+
+export { SD, Assertion, Destination, Signal, Bus };

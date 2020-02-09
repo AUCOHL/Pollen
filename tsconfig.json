@@ -1,10 +1,13 @@
 {
     "compilerOptions": {
-      "target": "ES5",
+      "target": "ES6",
       "moduleResolution": "node",
       "sourceMap": true,
-      "emitDecoratorMetadata": true,
-      "removeComments": true
+      "removeComments": true,
+      "alwaysStrict": true,
+      "outDir": "build",
+      "esModuleInterop": true,
+      "allowSyntheticDefaultImports": true
     },
     "exclude": [
       "node_modules",

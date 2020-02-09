@@ -17,11 +17,13 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-/// <reference path="Bus.ts"/>
-/// <reference path="SoC.ts"/>
-/// <reference path="Verilog.ts"/>
+import { Language, Filesystem } from "./Global.js";
+import { SD, Bus } from "./Bus.js";
+import { SoC } from "./SoC.js";
 
-var Getopt = require('node-getopt');
+// Languages
+import { Verilog } from "./Verilog.js";
+import { default as Getopt } from "node-getopt";
 
 function validate(language: Language, file: string, busName: string, hwModule: string, sd: SD): number {
     var rtl = Filesystem.readFileSync(file).toString();
@@ -75,32 +77,31 @@ function validate(language: Language, file: string, busName: string, hwModule: s
     }
 }
 
-function generateTopLevelModule(language: Language, file: string): number {
+function generateTopLevelModule(language: Language, file: string): string {
     var socString = Filesystem.readFileSync(file).toString();
     var socObject = JSON.parse(socString);
     var soc = SoC.fromObject(socObject);
-    console.log(language.fromSoC(soc));
-    return 0;
+    return language.fromSoC(soc);
 }
 
 function main(argv: string[]): number {
 
     var getopt = Getopt.create([
         ['h', 'help'                , 'Display this menu.'],
+        ['o', 'outFile=ARG'             , 'File to output to'],
         ['v', 'validate=ARG'        , 'Bus to validate verilog module against.'],
         ['m', 'module=ARG'          , 'Module to validate against bus. (Required with validate option.)'],
         ['s', 'masterOrSlave=ARG'   , 'Master or slave? (Required with validate option.)']
     ]);
-    getopt.setHelp(
-        "Usage: node pollen.js [OPTIONS] <files>\n" +
-        "\n" +
-        "[[OPTIONS]]\n" +
-        "\n"
-      );
+    getopt.setHelp(`
+Usage: node ${argv[1]} [OPTIONS] <files>
+[[OPTIONS]]
+    `);
 
     var opt = getopt.parse(argv.slice(2));
 
-    if (opt.argv.length != 1) {
+    if (opt.argv.length != 1 || !opt.options['outFile']) {
+        console.log(opt.argv, opt.options);
         getopt.showHelp();
         return 64;
     }
@@ -110,13 +111,14 @@ function main(argv: string[]): number {
 
     if (opt.options['validate']) {
         if (opt.options['module'] && opt.options['masterOrSlave']) {
-            return validate(language, inputFilename, opt.options['validate'], opt.options['module'], SD[<string>opt.options['masterOrSlave']]);
+            return validate(language, inputFilename, <string>opt.options['validate'], <string>opt.options['module'], SD[<string>opt.options['masterOrSlave']]);
         } else {
             getopt.showHelp();
             return 64;
         }
     } else {
-        return generateTopLevelModule(language, inputFilename);
+        let string = generateTopLevelModule(language, inputFilename);
+        Filesystem.writeFileSync(<string>opt.options['outFile'], string);
     }
 }
 

@@ -4,7 +4,8 @@
   "description": "Component of Cloud V, converts SoCs from JSON to Verilog and supporting files.",
   "main": "pollen.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "pollen": "node ./node_modules/.bin/tsc && node --no-warnings --experimental-modules build/main.js",
+    "clean": "rm -rf build"
   },
   "repository": {
     "type": "git",
@@ -16,18 +17,20 @@
     "verilog"
   ],
   "author": "donn",
-  "license": "Apache-2.0",
+  "license": "GPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/donn/Pollen/issues"
   },
   "homepage": "https://github.com/donn/Pollen#readme",
   "devDependencies": {
-    "typescript": "^2.9.2"
+    "typescript": "^3.7.0"
   },
   "dependencies": {
-    "@types/node": "^10.5.2",
+    "@types/mathjs": "^6.0.4",
+    "@types/node": "^13.0.0",
     "@types/node-getopt": "^0.2.31",
-    "mathjs": "^5.0.3",
+    "mathjs": "^6.0.4",
     "node-getopt": "^0.3.2"
-  }
+  },
+  "type": "module"
 }

@@ -17,6 +17,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+
+import { SD, Bus } from "./Bus.js";
 enum Affinity {
     infrastructure = 0,
     digital,
@@ -134,3 +136,5 @@ class SoC {
     }
 
 }
+
+export { Affinity, IP, SoC };

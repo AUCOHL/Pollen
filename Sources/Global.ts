@@ -22,7 +22,11 @@ var globalInfo = {
     rtlLocation: "./Samples"
 };
 
-var Filesystem = require('fs');
+import * as Filesystem from "fs";
+
+declare class IP {} 
+declare class Bus {} 
+declare class SoC {} 
 
 interface Language {
     net(type: string, signalWidth: number, width: number, name: string): string;
@@ -31,3 +35,5 @@ interface Language {
     fromSoC(soc: SoC): string;
     extractPorts(sourceModule: string, rtl: string, cb: any): any[];
 };
+
+export { globalInfo, Filesystem, Language };

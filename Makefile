@@ -1,7 +1,7 @@
 SOURCES = Sources/*.ts
 
 pollen.js: $(SOURCES)
-	node_modules/.bin/tsc --module none --alwaysStrict Sources/main.ts --outFile $@
+	node_modules/.bin/tsc --module none --outFile $@
 
 .PHONY: install, uninstall, clean
 
